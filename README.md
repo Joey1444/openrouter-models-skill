@@ -26,6 +26,16 @@ Two gaps, both found the hard way:
 
 ## Install
 
+Two ways — pick one.
+
+**skills.sh** (the open agent skills directory):
+
+```bash
+npx skills add Joey1444/openrouter-models-skill
+```
+
+**Claude Code plugin** (also adds the `or_embed` / `or_decide` MCP tools):
+
 ```bash
 claude plugin marketplace add Joey1444/openrouter-models-skill
 claude plugin install openrouter-models@openrouter-models
