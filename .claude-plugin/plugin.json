@@ -1,0 +1,27 @@
+{
+  "name": "openrouter-models",
+  "version": "0.1.0",
+  "description": "Pick OpenRouter models with real prices and true-free detection, and call the embeddings / decisions modalities that other OpenRouter MCP servers leave out.",
+  "author": {
+    "name": "Joey1444"
+  },
+  "homepage": "https://github.com/Joey1444/openrouter-models-skill",
+  "repository": "https://github.com/Joey1444/openrouter-models-skill",
+  "userConfig": {
+    "openrouter_api_key": {
+      "type": "string",
+      "title": "OpenRouter API key (optional)",
+      "description": "Only the embeddings / decisions tools use it. The /models command works without any key. Get one at https://openrouter.ai/keys",
+      "sensitive": true
+    }
+  },
+  "mcpServers": {
+    "openrouter-gap": {
+      "command": "python",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/servers/openrouter_gap.py"],
+      "env": {
+        "OPENROUTER_API_KEY": "${user_config.openrouter_api_key}"
+      }
+    }
+  }
+}

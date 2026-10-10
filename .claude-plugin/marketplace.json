@@ -1,0 +1,14 @@
+{
+  "name": "openrouter-models",
+  "description": "Pick OpenRouter models with real prices and true-free detection, plus embeddings/decisions tools",
+  "owner": {
+    "name": "Joey1444"
+  },
+  "plugins": [
+    {
+      "name": "openrouter-models",
+      "source": "./",
+      "description": "List OpenRouter models per modality with true-free detection; adds embeddings and decisions tools"
+    }
+  ]
+}
