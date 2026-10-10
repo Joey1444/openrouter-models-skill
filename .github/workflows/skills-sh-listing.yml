@@ -1,0 +1,108 @@
+name: skills.sh listing watcher
+
+# 盯 vercel-labs/skills 的收录申请（issue #2456）。
+# 一旦 skills.sh 上出现本仓库页面，自动给 README 加徽章并提交。
+# 跑在 GitHub 的服务器上 —— 不需要本地开机，也不需要 Claude。
+
+on:
+  schedule:
+    - cron: "23 */6 * * *" # 每 6 小时（UTC）
+  workflow_dispatch: # 也支持手动触发
+
+permissions:
+  contents: write # 需要写权限才能把徽章提交回去
+
+concurrency:
+  group: skills-sh-watcher
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check whether skills.sh lists this repo
+        id: check
+        run: |
+          URL="https://skills.sh/Joey1444/openrouter-models-skill"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" -L "$URL")
+          echo "skills.sh returned HTTP $CODE for $URL"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          if [ "$CODE" = "200" ]; then
+            echo "listed=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "listed=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stop early if already badged
+        if: steps.check.outputs.listed == 'yes'
+        id: guard
+        run: |
+          if grep -q "skills.sh/b/" README.md; then
+            echo "badge already present, nothing to do"
+            echo "needed=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=yes" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Add the skills.sh badge
+        if: steps.check.outputs.listed == 'yes' && steps.guard.outputs.needed == 'yes'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("README.md")
+          text = path.read_text(encoding="utf-8")
+
+          badge = ("[![skills.sh](https://skills.sh/b/Joey1444/openrouter-models-skill)]"
+                   "(https://skills.sh/Joey1444/openrouter-models-skill)")
+
+          if "skills.sh/b/" in text:
+              print("badge already present")
+              raise SystemExit(0)
+
+          # 插在 License 徽章那一行之后
+          lines = text.splitlines()
+          for i, line in enumerate(lines):
+              if "License-MIT" in line or line.strip().startswith("[![License"):
+                  lines.insert(i + 1, badge)
+                  break
+          else:
+              lines.insert(1, badge)
+
+          text = "\n".join(lines)
+
+          old = "**skills.sh** (the open agent skills directory):"
+          new = ("**skills.sh** — [listed](https://skills.sh/Joey1444/openrouter-models-skill), "
+                 "the open agent skills directory:")
+          if old in text:
+              text = text.replace(old, new)
+
+          path.write_text(text, encoding="utf-8")
+          print("README updated")
+          PY
+
+          if git diff --quiet; then
+            echo "no changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: skills.sh 已收录，加徽章"
+          git push
+
+      - name: Summary
+        run: |
+          {
+            echo "### skills.sh listing watcher"
+            echo ""
+            echo "- skills.sh HTTP status: \`${{ steps.check.outputs.code }}\`"
+            echo "- listed: \`${{ steps.check.outputs.listed }}\`"
+            if [ "${{ steps.check.outputs.listed }}" = "yes" ]; then
+              echo "- README badge: added (or already present)"
+            else
+              echo "- README badge: not yet — still waiting for review"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
