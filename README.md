@@ -117,6 +117,15 @@ claude plugin install openrouter-models@openrouter-models
 **判据**：id 带 `:free` 或 pricing **全部字段**为 0 才算免费。只看 `prompt`/`completion` 会把收费模型
 误判成免费——真实计费常在 `image_output`/`image_token`。视频类定价压根不在接口里，一律标「未知」，不冒充免费。
 
+## 图像生成走**独立接口**，不是对话接口
+
+生图用 `POST /api/v1/images`（body `{model, prompt}` → 返回 base64），**不是** chat/completions。
+拿对话接口去调生图模型会失败。
+
+- 实测可用的免费模型：`inclusionai/ming-image-0.1-design`（2560×1440，cost=0）
+- ⚠️ 它**不认 `aspect_ratio` 参数**（报 400）——横竖构图只能靠提示词描述
+- ⚠️ cc-switch 的模型列表**只含对话模型**，别去那里找生图模型
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
